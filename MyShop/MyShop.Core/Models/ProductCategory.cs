@@ -9,7 +9,6 @@ namespace MyShop.Core.Models
         [StringLength(100)]
         [DisplayName("Category Name")]
         public string Category { get; set; }
-
         public string Description { get; set; }
 
     }

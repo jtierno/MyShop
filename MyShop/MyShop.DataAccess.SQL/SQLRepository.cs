@@ -11,17 +11,14 @@ namespace MyShop.DataAccess.SQL
 {
     public class SQLRepository<T> : IRepository<T> where T : BaseEntity
     {
-
-        internal DataContext dataContext;
+        internal DataContext context;
         internal DbSet<T> dbSet;
 
-
-        public SQLRepository(DataContext dataContext)
+        public SQLRepository(DataContext context)
         {
-            this.dataContext = dataContext;
-            this.dbSet = dataContext.Set<T>();
+            this.context = context;
+            this.dbSet = context.Set<T>();
         }
-
 
         public IQueryable<T> Collection()
         {
@@ -30,18 +27,18 @@ namespace MyShop.DataAccess.SQL
 
         public void Commit()
         {
-            dataContext.SaveChanges();
+            context.SaveChanges();
         }
 
         public void Delete(string Id)
         {
             var t = Find(Id);
 
-            if (dataContext.Entry(t).State == EntityState.Detached)
+            if (context.Entry(t).State == EntityState.Detached)
+            {
                 dbSet.Attach(t);
-            
+            }
             dbSet.Remove(t);
-
         }
 
         public T Find(string Id)
@@ -57,9 +54,7 @@ namespace MyShop.DataAccess.SQL
         public void Update(T t)
         {
             dbSet.Attach(t);
-            dataContext.Entry(t).State = EntityState.Modified;
-
-
+            context.Entry(t).State = EntityState.Modified;
         }
     }
 }

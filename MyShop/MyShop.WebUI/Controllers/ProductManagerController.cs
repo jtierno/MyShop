@@ -1,9 +1,11 @@
 ﻿using MyShop.Core.Contracts;
 using MyShop.Core.Models;
 using MyShop.Core.ViewModels;
-using MyShop.DataAccess.InMemory;
+using MyShop.DataAccess.SQL;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 
 namespace MyShop.WebUI.Controllers
@@ -15,8 +17,8 @@ namespace MyShop.WebUI.Controllers
 
         public ProductManagerController(IRepository<Product> productContext, IRepository<ProductCategory> productCategoryContext)
         {
-            context = productContext;
-            productCategories = productCategoryContext;
+            this.context = productContext;
+            this.productCategories = productCategoryContext;
         }
 
         // GET: ProductManager
@@ -29,21 +31,27 @@ namespace MyShop.WebUI.Controllers
         public ActionResult Create()
         {
             ProductManagerViewModel viewModel = new ProductManagerViewModel();
+
             viewModel.Product = new Product();
             viewModel.ProductCategories = productCategories.Collection();
             return View(viewModel);
         }
 
         [HttpPost]
-        public ActionResult Create(Product product)
+        public ActionResult Create(ProductManagerViewModel productManager, HttpPostedFileBase file)
         {
             if (!ModelState.IsValid)
             {
-                return View(product);
+                return View(productManager);
             }
             else
             {
-                context.Insert(product);
+                if(file != null)
+                {
+                    productManager.Product.Image = productManager.Product.Id + Path.GetExtension(file.FileName);
+                    file.SaveAs(Server.MapPath("//Content//ProductImages//") + productManager.Product.Image);
+                }
+                context.Insert(productManager.Product);
                 context.Commit();
 
                 return RedirectToAction("Index");
@@ -60,7 +68,7 @@ namespace MyShop.WebUI.Controllers
             else
             {
                 ProductManagerViewModel viewModel = new ProductManagerViewModel();
-                viewModel.Product = new Product();
+                viewModel.Product = product;
                 viewModel.ProductCategories = productCategories.Collection();
 
                 return View(viewModel);
@@ -68,7 +76,7 @@ namespace MyShop.WebUI.Controllers
         }
 
         [HttpPost]
-        public ActionResult Edit(Product product, string Id)
+        public ActionResult Edit(ProductManagerViewModel productManager, string Id, HttpPostedFileBase file)
         {
             Product productToEdit = context.Find(Id);
             if (productToEdit == null)
@@ -79,14 +87,18 @@ namespace MyShop.WebUI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return View(product);
+                    return View(productManager);
+                }
+                if (file != null)
+                {
+                    productToEdit.Image = productManager.Product.Id + Path.GetExtension(file.FileName);
+                    file.SaveAs(Server.MapPath("//Content//ProductImages//") + productToEdit.Image);
                 }
 
-                productToEdit.Category = product.Category;
-                productToEdit.Decription = product.Decription;
-                productToEdit.Image = product.Image;
-                productToEdit.Name = product.Name;
-                productToEdit.Price = product.Price;
+                productToEdit.Category = productManager.Product.Category;
+                productToEdit.Decription = productManager.Product.Decription;
+                productToEdit.Name = productManager.Product.Name;
+                productToEdit.Price = productManager.Product.Price;
 
                 context.Commit();
                 return RedirectToAction("Index");
